@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>短链生成</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .form-group { margin-bottom: 12px; }
+    label { display: inline-block; width: 80px; }
+    input[type="text"] { width: 300px; padding: 6px; }
+    button { padding: 6px 16px; }
+    #pre { margin-top: 20px; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+<script>
+// 获取 URL 参数
+function getQueryParam(name) {
+  const url = new URL(window.location.href);
+  return url.searchParams.get(name);
+}
+
+// 判断字符串是否是合法 URL
+function isValidURL(str) {
+  try {
+    new URL(str);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function handleRedirect() {
+  const n = getQueryParam('n');
+  if (!n) return; // 没有 n 参数，不处理跳转逻辑
+
+  try {
+    const resp = await fetch(`https://api.wr.ruanhor.dpdns.org/short-link?m=get&n=${encodeURIComponent(n)}`);
+    const json = await resp.json();
+
+    if (json.code === 200 && typeof json.data === 'string') {
+      let target = json.data.trim();
+      // 尝试作为 URL 解析
+      if (!isValidURL(target)) {
+        // 加上 https:// 前缀再试
+        if (isValidURL('https://' + target)) {
+          target = 'https://' + target;
+        } else {
+          // 无法识别为 URL，则跳转去掉 n 参数
+          const url = new URL(window.location.href);
+          url.searchParams.delete('n');
+          window.location.href = url.toString();
+          return;
+        }
+      }
+      // 合法 URL，跳转
+      window.location.href = target;
+    } else {
+      // code 不对或 data 不是 string，去掉 n 参数刷新
+      const url = new URL(window.location.href);
+      url.searchParams.delete('n');
+      window.location.href = url.toString();
+    }
+  } catch (e) {
+    console.error('请求或解析出错', e);
+    // 出错时也去掉 n 参数
+    const url = new URL(window.location.href);
+    url.searchParams.delete('n');
+    window.location.href = url.toString();
+  }
+}
+
+// 页面加载时先判断是否重定向
+handleRedirect();
+
+// 如果没有 n 参数，就渲染表单
+if (!getQueryParam('n')) {
+  document.body.innerHTML += `
+    <h1>短链生成</h1>
+    <div class="form-group">
+      <label>输入名称：</label>
+      <input type="text" id="nameInput" placeholder="例如 abc123" />
+    </div>
+    <div class="form-group">
+      <label>指向：</label>
+      <input type="text" id="targetInput" placeholder="例如 https://example.com" />
+    </div>
+    <button onclick="submitLink()">提交</button>
+    <div id="pre"></div>
+
+    <script>
+      async function submitLink() {
+        const name = document.getElementById('nameInput').value.trim();
+        const target = document.getElementById('targetInput').value.trim();
+        const pre = document.getElementById('pre');
+        pre.textContent = '';
+
+        if (!name || !target) {
+          alert('名称和指向不能为空');
+          return;
+        }
+
+        // 构造 PUT 请求
+        const url = 'https://api.wr.ruanhor.dpdns.org/short-link';
+        const params = new URLSearchParams({ n: name, p: target, m: 'put' });
+
+        try {
+          const resp = await fetch(url + '?' + params.toString(), { method: 'PUT' });
+          const json = await resp.json();
+
+          if (json.code === 200) {
+            // 成功，在当前页面 URL 加上 ?n=名称
+            const current = new URL(window.location.href);
+            current.searchParams.set('n', name);
+            pre.innerHTML = '访问链接：<a href="' + current.toString() + '" target="_blank">' + current.toString() + '</a>';
+          } else {
+            pre.textContent = '创建失败：' + (json.message || '未知错误');
+          }
+        } catch (e) {
+          pre.textContent = '请求出错：' + e.message;
+        }
+      }
+    <\/script>
+  `;
+}
+</script>
+
+</body>
+</html>
