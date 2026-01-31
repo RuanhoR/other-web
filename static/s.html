@@ -73,23 +73,6 @@ async function handleRedirect() {
 
 // 页面加载时先判断是否重定向
 handleRedirect();
-
-// 如果没有 n 参数，就渲染表单
-if (!getQueryParam('n')) {
-  document.body.innerHTML += `
-    <h1>短链生成</h1>
-    <div class="form-group">
-      <label>输入名称：</label>
-      <input type="text" id="nameInput" placeholder="例如 abc123" />
-    </div>
-    <div class="form-group">
-      <label>指向：</label>
-      <input type="text" id="targetInput" placeholder="例如 https://example.com" />
-    </div>
-    <button onclick="submitLink()">提交</button>
-    <div id="pre"></div>
-
-    <script>
       async function submitLink() {
         const name = document.getElementById('nameInput').value.trim();
         const target = document.getElementById('targetInput').value.trim();
@@ -121,7 +104,20 @@ if (!getQueryParam('n')) {
           pre.textContent = '请求出错：' + e.message;
         }
       }
-    </script>
+// 如果没有 n 参数，就渲染表单
+if (!getQueryParam('n')) {
+  document.body.innerHTML += `
+    <h1>短链生成</h1>
+    <div class="form-group">
+      <label>输入名称：</label>
+      <input type="text" id="nameInput" placeholder="例如 abc123" />
+    </div>
+    <div class="form-group">
+      <label>指向：</label>
+      <input type="text" id="targetInput" placeholder="例如 https://example.com" />
+    </div>
+    <button onclick="submitLink()">提交</button>
+    <div id="pre"></div>
   `;
 }
 </script>
