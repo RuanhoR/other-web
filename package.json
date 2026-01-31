@@ -1,0 +1,11 @@
+{
+  "name": "other web",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm vite",
+    "build:2025": "cd haji5 && pnpm install && pnpm build && mv dist ../dist/haji5",
+    "build": "mkdir dist && pnpm build:2025 && mv static dist/static",
+    "preview": "pnpm vite preview"
+  }
+}
